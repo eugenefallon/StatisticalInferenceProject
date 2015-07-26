@@ -5,28 +5,58 @@ date: "July 26, 2015"
 output: pdf_document
 ---
 
+## Project instruction
 Now in the second portion of the class, we're going to analyze the ToothGrowth data in the R datasets package. 
-Load the ToothGrowth data and perform some basic exploratory data analyses 
-Provide a basic summary of the data.
-Use confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose. (Only use the techniques from class, even if there's other approaches worth considering)
-State your conclusions and the assumptions needed for your conclusions. 
-Some criteria that you will be evaluated on
-Did you  perform an exploratory data analysis of at least a single plot or table highlighting basic features of the data?
-Did the student perform some relevant confidence intervals and/or tests?
-Were the results of the tests and/or intervals interpreted in the context of the problem correctly? 
-Did the student describe the assumptions needed for their conclusions?
 
-## Overview: 
-In a few (2-3) sentences explain what is going to be reported on.
+1) Load the ToothGrowth data and perform some basic exploratory data analyses 
 
-## Simulations: 
-Include English explanations of the simulations you ran, with the accompanying R code. Your explanations should make clear what the R code accomplishes.
+2) Provide a basic summary of the data.
 
-## Sample Mean versus Theoretical Mean: 
-Include figures with titles. In the figures, highlight the means you are comparing. Include text that explains the figures and what is shown on them, and provides appropriate numbers.
+3) Use confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose. (Only use the techniques from class, even if there's other approaches worth considering)
 
-## Sample Variance versus Theoretical Variance: 
-Include figures (output from R) with titles. Highlight the variances you are comparing. Include text that explains your understanding of the differences of the variances.
+4) State your conclusions and the assumptions needed for your conclusions. 
 
-## Distribution: 
-Via figures and text, explain how one can tell the distribution is approximately normal.
+## Initial data analysis:
+
+Our initial analysis of the data shows that we have a set of 60 observations of the length of teeth for each of 10 guinea pigs. The observations are for three dose levels of Vitamin C (0.5, 1 and 2 mg) each with two delivery methods (orange juice or ascorbic acid).
+
+
+```{r}
+library(datasets)
+library(ggplot2)
+ggplot(data=ToothGrowth, aes(x=as.factor(dose), y=len, fill=supp)) +
+    geom_bar(stat="identity",) +
+    facet_grid(. ~ supp) +
+    xlab("Dose(mg)") +
+    ylab("Tooth length") +
+    guides(fill=guide_legend(title="Delivery Method"))
+```
+
+## Data summary
+
+The plot above shows a clear positive correlation between the tooth length and the dose levels of Vitamin C, for both delivery methods.
+
+### Further analysis
+
+The effect of the dose can also be identified using regression analysis. One interesting question that can also be addressed is whether the delivery method (i.e. orange juice or ascorbic acid) has any effect on the tooth length. In other words, how much of the variance in tooth length, if any, can be explained by the delivery method?
+
+```{r}
+fit <- lm(len ~ dose + supp, data=ToothGrowth)
+summary(fit)
+```
+
+## Inference
+
+Based on our analysis above, we can conclude that the model explains 70% of the variance in the data. The intercept is `r fit$coefficients[[1]]`, meaning that with no supplement of Vitamin C, the average tooth length is `r fit$coefficients[[1]]` units. The coefficient of dose is `r fit$coefficients[[2]]`. It can be interpreted as increasing the delievered dose 1 mg, all else equal (i.e. no change in the delivery method), would increase the tooth length `r fit$coefficients[[2]]` units. The last coefficient is for the delivery method. The computed coefficient is for suppVC and the value is `r fit$coefficients[[3]]` meaning that delivering a given dose as ascorbic acid, would result in `r abs(fit$coefficients[[3]])` units of decrease in the tooth length. Since there are only two categories, we can also conclude that on average, delivering the dosage as orange juice would increase the tooth length by `r abs(fit$coefficients[[3]])` units.
+
+
+## Confidence levels
+
+95% confidence intervals for two variables and the intercept are as follows.
+
+```{r}
+confint(fit)
+```
+
+The confidence intervals mean that if we collect a different set of data and estimate parameters of the linear model many times, 95% of the time, the coefficient estimations will be in these ranges. For each coefficient (i.e. intercept, dose and suppVC), the null hypothesis is that the coefficients are zero, meaning that no tooth length variation is explained by that variable. All p-values are less than 0.05, rejecting the null hypothesis and suggesting that each variable explains a significant portion of variability in tooth length, assuming the significance level is 5%.
+
